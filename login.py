@@ -15,33 +15,152 @@ from selenium.webdriver.support import expected_conditions as EC
 
 def send_screenshots_email(smtp_server, smtp_port, sender, password, recipient, screenshots):
     """
-    一封邮件发送所有截图
+    一封邮件发送所有截图（luxury HTML 模板）
     screenshots: [(file_path, display_name, status), ...]
     status: 'success' | 'timeout' | 'error'
     """
     beijing_tz = timezone(timedelta(hours=8))
-    now = datetime.now(beijing_tz).strftime("%Y-%m-%d %H:%M")
+    now = datetime.now(beijing_tz)
+    date_str = now.strftime("%B %d, %Y")
+    time_str = now.strftime("%H:%M")
 
-    # 生成邮件正文摘要
-    lines = [f"雀魂每日自动登录完成，共 {len(screenshots)} 个账号。", f"执行时间：{now}", ""]
-    for _, name, status in screenshots:
-        icon = {"success": "✅", "timeout": "⏱️", "error": "❌"}.get(status, "❓")
-        lines.append(f"  {icon} {name}")
-    body_text = "\n".join(lines)
+    success_count = sum(1 for _, _, s in screenshots if s == "success")
+    pending_count = len(screenshots) - success_count
 
-    msg = MIMEMultipart()
+    # 构建账号卡片 HTML
+    cards_html = ""
+    for idx, (path, name, status) in enumerate(screenshots):
+        if status == "success":
+            tag_color = "#c9a84c"
+            tag_bg = "#c9a84c"
+            tag_text = "#1a1a1a"
+            desc = "Signed in successfully"
+            line_color = "#c9a84c"
+        else:
+            tag_color = "rgba(255,255,255,0.55)"
+            tag_bg = "rgba(255,255,255,0.12)"
+            tag_text = tag_color
+            desc = "Canvas did not load"
+            line_color = "rgba(255,255,255,0.2)"
+
+        status_label = "Success" if status == "success" else "Timeout"
+        cid = f"screenshot-{idx}"
+
+        cards_html += f"""\
+                    <tr>
+                      <td style="padding:0 48px 28px;background:#1a1a1a;">
+                        <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(255,255,255,0.03);">
+                          <tr>
+                            <td width="56%" style="padding:16px 0 16px 16px;vertical-align:top;">
+                              <div style="position:relative;overflow:hidden;">
+                                <img src="cid:{cid}" alt="Screenshot" style="display:block;width:100%;height:auto;border:1px solid rgba(255,255,255,0.08);">
+                                <span style="position:absolute;top:10px;left:10px;padding:4px 10px;background:{tag_bg};font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:8px;color:{tag_text};letter-spacing:0.15em;text-transform:uppercase;font-weight:600;">{status_label}</span>
+                              </div>
+                            </td>
+                            <td style="padding:16px 22px 16px 18px;vertical-align:top;">
+                              <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;color:#ffffff;font-weight:500;margin-bottom:8px;">{name}</div>
+                              <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;color:rgba(255,255,255,0.45);margin-bottom:10px;">{desc}</div>
+                              <div>
+                                <span style="display:inline-block;width:16px;height:1px;background:{line_color};vertical-align:middle;margin-right:6px;"></span>
+                                <span style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:10px;color:rgba(255,255,255,0.25);letter-spacing:0.05em;">Screenshot attached</span>
+                              </div>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>"""
+
+    html = f"""\
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    </head>
+    <body style="margin:0;padding:0;background:#eae7e2;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#eae7e2;padding:30px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;">
+        <tr>
+          <td style="padding:48px 48px 0;background:#1a1a1a;">
+            <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:0.35em;color:#c9a84c;text-transform:uppercase;">
+              Daily Check-in
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:12px 48px 40px;background:#1a1a1a;">
+            <div style="font-family:'Playfair Display',Georgia,serif;font-size:36px;font-weight:400;color:#ffffff;line-height:1.15;">
+              Mahjong<br><span style="font-style:italic;">Soul</span>
+            </div>
+            <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;color:rgba(255,255,255,0.45);letter-spacing:0.06em;margin-top:14px;">
+              {date_str} &nbsp; at &nbsp; {time_str} CST
+            </div>
+            <div style="margin-top:24px;">
+              <span style="display:inline-block;width:36px;height:1px;background:#c9a84c;"></span>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:36px 48px 32px;background:#1a1a1a;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td width="33%">
+                  <div style="font-family:'Playfair Display',Georgia,serif;font-size:36px;font-weight:400;color:#ffffff;line-height:1;">{len(screenshots)}</div>
+                  <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:9px;letter-spacing:0.2em;color:rgba(255,255,255,0.4);text-transform:uppercase;margin-top:6px;">Accounts</div>
+                </td>
+                <td width="33%">
+                  <div style="font-family:'Playfair Display',Georgia,serif;font-size:36px;font-weight:400;color:#c9a84c;line-height:1;">{success_count}</div>
+                  <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:9px;letter-spacing:0.2em;color:rgba(255,255,255,0.4);text-transform:uppercase;margin-top:6px;">Success</div>
+                </td>
+                <td width="33%">
+                  <div style="font-family:'Playfair Display',Georgia,serif;font-size:36px;font-weight:400;color:#ffffff;line-height:1;">{pending_count}</div>
+                  <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:9px;letter-spacing:0.2em;color:rgba(255,255,255,0.4);text-transform:uppercase;margin-top:6px;">Pending</div>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:14px 48px;background:#1a1a1a;">
+            <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:9px;letter-spacing:0.2em;color:rgba(255,255,255,0.35);text-transform:uppercase;">
+              Results
+            </div>
+          </td>
+        </tr>
+        {cards_html}
+        <tr>
+          <td style="padding:40px 48px 48px;background:#1a1a1a;">
+            <div style="border-top:1px solid rgba(255,255,255,0.1);margin-bottom:24px;"></div>
+            <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;color:rgba(255,255,255,0.3);letter-spacing:0.04em;">
+              Automated by GitHub Actions<br>
+              <span style="color:rgba(255,255,255,0.15);">This is an automated message. Please do not reply.</span>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+    </table>
+    </body>
+    </html>"""
+
+    msg = MIMEMultipart("related")
     msg["From"] = sender
     msg["To"] = recipient
-    msg["Subject"] = f"雀魂自动登录结果 - {now}"
+    msg["Subject"] = f"Mahjong Soul - Daily Check-in - {date_str}"
 
-    msg.attach(MIMEText(body_text, "plain", "utf-8"))
+    # HTML 正文
+    msg.attach(MIMEText(html, "html", "utf-8"))
 
-    for path, name, status in screenshots:
+    # 截图内联嵌入（cid 引用）
+    for idx, (path, name, status) in enumerate(screenshots):
         try:
             with open(path, "rb") as f:
                 img = MIMEImage(f.read())
-                filename = f"{name}_{status}.png"
-                img.add_header("Content-Disposition", "attachment", filename=filename)
+                cid = f"screenshot-{idx}"
+                img.add_header("Content-ID", f"<{cid}>")
+                img.add_header("Content-Disposition", "inline", filename=f"{name}_{status}.png")
                 msg.attach(img)
         except Exception as e:
             print(f"附件读取失败 ({name}): {e}")
