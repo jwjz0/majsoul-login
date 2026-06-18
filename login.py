@@ -1,4 +1,3 @@
-import random
 import sys
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -68,12 +67,6 @@ RECIPIENT_EMAIL = raw_args[-1]
 account_args = raw_args[:-5]
 acccounts = int(len(account_args) / 2)
 print(f"Config {acccounts} accounts")
-
-# 随机延迟 1-45 分钟，避免每天同一秒登录
-delay_minutes = random.randint(1, 45)
-delay_seconds = delay_minutes * 60
-print(f"随机延迟 {delay_minutes} 分钟后开始登录...")
-sleep(delay_seconds)
 
 # 收集所有截图，最后一起发
 screenshots = []
