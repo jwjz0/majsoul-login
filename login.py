@@ -194,7 +194,7 @@ screenshots = []
 for i in range(acccounts):
     email = account_args[i]
     passwd = account_args[i + acccounts]
-    account_label = email.split("@")[0]  # 用邮箱前缀当短名
+    account_label = email  # 完整邮箱
     print("----------------------------")
 
     # 1. 启动浏览器
