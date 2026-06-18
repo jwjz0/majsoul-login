@@ -1,8 +1,8 @@
 name: Majsoul-Login
 on:
   workflow_dispatch:
-  schedule:  # 5:00 北京时间
-    - cron: '0 21 * * *'
+  schedule:  # 8:00 北京时间
+    - cron: '0 0 * * *'
 jobs:
   login:
     name: Majsoul-Login
