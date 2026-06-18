@@ -1,8 +1,8 @@
 name: Majsoul-Login
 on:
   workflow_dispatch:
-  schedule: #5:00
-   - cron: '0 21 * * *'
+  schedule:  # 5:00 北京时间
+    - cron: '0 21 * * *'
 jobs:
   login:
     name: Majsoul-Login
@@ -15,4 +15,12 @@ jobs:
         run: pip install selenium==4.17.2
 
       - name: Majsoul login
-        run: python login.py ${{ secrets.EMAIL }} ${{ secrets.PASSWD }}
+        run: |
+          python login.py \
+            ${{ secrets.EMAIL }} \
+            ${{ secrets.PASSWD }} \
+            ${{ secrets.SMTP_SERVER }} \
+            ${{ secrets.SMTP_PORT }} \
+            ${{ secrets.SENDER_EMAIL }} \
+            ${{ secrets.SENDER_PASS }} \
+            ${{ secrets.RECIPIENT_EMAIL }}
