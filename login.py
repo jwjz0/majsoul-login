@@ -133,7 +133,7 @@ for i in range(acccounts):
         .click()\
         .perform()
     print(f"Account {i+1} entering game...")
-    sleep(20)  # 等游戏加载和奖励弹窗
+    sleep(40)  # 等游戏加载和奖励弹窗
     print(f"Account {i+1} login completed")
 
     # 5. 截图
