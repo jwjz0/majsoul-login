@@ -3,7 +3,7 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from time import sleep
 
 from selenium import webdriver
@@ -19,7 +19,8 @@ def send_screenshots_email(smtp_server, smtp_port, sender, password, recipient, 
     screenshots: [(file_path, display_name, status), ...]
     status: 'success' | 'timeout' | 'error'
     """
-    now = datetime.now().strftime("%Y-%m-%d %H:%M")
+    beijing_tz = timezone(timedelta(hours=8))
+    now = datetime.now(beijing_tz).strftime("%Y-%m-%d %H:%M")
 
     # 生成邮件正文摘要
     lines = [f"雀魂每日自动登录完成，共 {len(screenshots)} 个账号。", f"执行时间：{now}", ""]
